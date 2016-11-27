@@ -1,0 +1,107 @@
+function packetJson(text: text) :: jsonobject:
+	set {_t::*} to {_text} split by ""
+	loop {_t::*}:
+		if loop-value = """":
+			set {_t::%loop-index%} to "\"""
+		else if loop-value = "\":
+			if {_t::%loop-index parsed as int + 1%} != "n":
+				set {_t::%loop-index%} to "\\"
+	set {_text} to join {_t::*} by ""
+	if {_json} isn't set:
+		set {_json} to "{""text"":""%{_text}%"""
+	else:
+		set {_json} to "%{_json}%,{""text"":""%{_text}%"""
+	return json of string "{""extra"":[%{_json}%}],""text"":""""}"
+
+function packetActionBar(text: text, player: player):
+	set {_packet} to new play_server_chat packet
+	set "chatcomponent" pjson 0 of {_packet} to packetJson({_text})
+	set byte pnum 0 of {_packet} to 2
+	send {_player} packet {_packet}
+
+function formatTime(time: integer) :: string:
+	if mod({_time}, 60) < 10:
+		return "%({_time} - mod({_time}, 60)) / 60%:0%mod({_time}, 60)%"
+	else:
+		return "%({_time} - mod({_time}, 60)) / 60%:%mod({_time}, 60)%"
+
+#	     ___		  ___		   ___	    #
+#	    /\__\		 /\__\		  /\  \	    #
+#	  /::|  |	   /:/  /		 /::\  \    #
+#    /:|:|  |	  /:/__/	    /:/\:\ \    #
+#  /:/|:|__|__   /::\  \ ___   /:/  \:\  \  #
+# /:/ |::::\__\ /:/\:\  /\__\ /:/__/ \:\__\ #
+# \/__/~~/:/  / \/__\:\/:/  / \:\  \ /:/  / #
+#		/:/  /	   \::/  /     \:\  /:/  /  #
+#	   /:/  /	   /:/  /	    \:\/:/  /   #
+#	  /:/  /	  /:/  /	     \::/  /    #
+#	  \/__/		 \/__/	          \/__/	    #
+#										    #
+#										    #
+# The MHO Skript by Syst3ms.				#
+# Snippets by F8te						    #
+#! do not copy without authorization	   !#
+
+command /mho <text> [<text>] [<text>] [<text>]:
+	trigger:
+		if arg 1 is "team":
+			if arg 2 is set:
+				if arg 2 is "add":
+					if arg 3 is set:
+						if {mho.teams::%arg 3%} is not set:
+							if arg 4 is set:
+								set {mho.teams::%arg 3%} to arg 4
+								set {mho.colors::%arg 3%} to white
+								evaluate "message ""<%{mho.colors::%arg 3%}%>%arg 4%<reset> (identified by <purple>%arg 3%<reset>) have|has been created !"""
+							else:
+								send "If you don't specify a cool display name, this season's gonna be pretty dull..."
+						else:
+							send "That team already exists !"
+					else:
+						send "Not putting any id for your team will make my job quite hard..."
+				else if arg 2 is "color":
+					if arg 3 is set:
+						if {mho.teams::%arg 3%} is set:
+							if arg 4 is set:
+								set {_color} to arg 4 parsed as color
+								if parse error is set:
+									send "That's not a valid color !"
+								else:
+									set {mho.colors::%arg 3%} to {_color}
+									evaluate "send ""<%{mho.colors::%arg 3%}%>%{mho.teams::%arg 3%}%<reset> have|has a new color ! If you didn't notice, it's <%{mho.colors::%arg 3%}%>%arg 4%<reset>"""
+							else:
+								send "Specifying a color is the point of this command..."
+						else:
+							send "Team no exist !!1!!1!!!"
+					else:
+						send "You're not making this easy. Specify a team id and then a color."
+				else if arg 2 is "delete":
+					if arg 3 is set:
+						if {mho.teams::%arg 3%} is set:
+							send "<%{mho.colors::%arg 3%}%>%{mho.teams::%arg 3%}%<reset> have|has been deleted !"
+							clear {mho.teams::%arg 3%}
+						else:
+							send "You can't delete a team that doesn't exist..."
+					else:
+						send "You can't delete no team..."
+		else if arg 1 is "timer":
+			if arg 2 is set:
+				if arg 2 is "start":
+					set {mho.timer.time} to "%arg 3%" parsed as integer
+					set {mho.timer.go} to true
+					set {mho.timer.status} to true
+				else if arg 2 is "pause":
+					set {mho.timer.go} to false
+				else if arg 2 is "stop":
+					set {mho.timer.status} to false
+					clear {mho.timer.time}
+
+every 1 second:
+	if {mho.timer.status} is true:
+		loop all players:
+			evaluate "packetActionBar(""&l%%formatTime(%{mho.timer.time}%)%%"", all players)"
+		if {mho.timer.go} is true:
+			remove 1 from {mho.timer.time}
+		if {mho.timer.time} < 0:
+			set {mho.timer.status} to false
+			clear {mho.timer.time}
