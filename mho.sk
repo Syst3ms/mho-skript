@@ -1,4 +1,4 @@
-function packetJson(text: text) :: jsonobjec:
+function packetJson(text: text) :: jsonobject:
 	set {_t::*} to {_text} split by ""
 	loop {_t::*}:
 		if loop-value = """":
